@@ -25,7 +25,7 @@ const cube = new THREE.Mesh(geometry, material);
 
 function loadBeeModel() {
     return new Promise((resolve, reject) => {
-        loader.load('public/bee.glb', (gltf) => {
+        loader.load('bee.glb', (gltf) => {
             gltf.scene.traverse((child) => {
                 if (child.isMesh && child.material.map) {
                     child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
