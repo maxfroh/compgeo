@@ -1,38 +1,83 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
+
+const loader = new GLTFLoader();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 
-const sphere_geometry = new THREE.SphereGeometry( 1, 16, 16 );
-const sphere_material = new THREE.MeshPhongMaterial( { color: 0xffff00 } );
-const sphere = new THREE.Mesh( sphere_geometry, sphere_material );
+const sphere_geometry = new THREE.SphereGeometry(1, 16, 16);
+const sphere_material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
 sphere.translateY(1);
-scene.add( sphere );
+// scene.add(sphere);
 
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// scene.add(cube);
 
-const light = new THREE.AmbientLight( 0x808080 ); // soft white light
-scene.add( light );
-const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-scene.add( directionalLight );
+function loadBeeModel() {
+    return new Promise((resolve, reject) => {
+        loader.load('static/bee.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.isMesh && child.material.map) {
+                    child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                    child.material.needsUpdate = true;
+                }
+            });
+            resolve(gltf.scene);
+        }, undefined, (error) => {
+            console.error(error);
+            reject(error);
+        });
+    });
+}
+
+const beeTemplate = await loadBeeModel();
+
+const bee = beeTemplate.clone(true);
+scene.add(bee)
+
+// loader.load('static/bee.glb', (gltf) => {
+//     gltf.scene.traverse((child) => {
+//         if (child.isMesh && child.material.map) {
+//             // 1. Force the texture to look sharp from any angle
+//             child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+//             // 2. Prevent mipmap blurriness at mid-range distances
+//             child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+
+//             child.material.needsUpdate = true;
+//         }
+//     });
+//     scene.add(gltf.scene);
+// }, undefined, function (error) {
+//     console.error(error);
+// });
+
+
+const light = new THREE.AmbientLight(0x808080, 4); // soft white light
+// light.position.set(-1, 2, 4);
+scene.add(light);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+directionalLight.position.set(-1, 2, 4);
+scene.add(directionalLight);
 
 
 camera.position.z = 5;
 
 
 function animate(time) {
-    sphere.rotation.x = time / 2000;
-    sphere.rotation.y = time / 1000;
-    cube.rotation.x = time / 2000;
-    cube.rotation.y = time / 1000;
+    bee.rotation.x = time / 2000;
+    bee.rotation.y = time / 1000;
     renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
