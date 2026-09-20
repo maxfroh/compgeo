@@ -46,25 +46,7 @@ const beeTemplate = await loadBeeModel();
 const bee = beeTemplate.clone(true);
 scene.add(bee)
 
-// loader.load('static/bee.glb', (gltf) => {
-//     gltf.scene.traverse((child) => {
-//         if (child.isMesh && child.material.map) {
-//             // 1. Force the texture to look sharp from any angle
-//             child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-//             // 2. Prevent mipmap blurriness at mid-range distances
-//             child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
-
-//             child.material.needsUpdate = true;
-//         }
-//     });
-//     scene.add(gltf.scene);
-// }, undefined, function (error) {
-//     console.error(error);
-// });
-
-
-const light = new THREE.AmbientLight(0x808080, 4); // soft white light
+const light = new THREE.AmbientLight(0x808080, 3); // soft white light
 // light.position.set(-1, 2, 4);
 scene.add(light);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
