@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { Patch } from './patch.js';
+import { Hive, Bee } from './bee.js';
 
-const loader = new GLTFLoader();
 
 const scene = new THREE.Scene();
 
+// orthographic camera setup
 const aspect = window.innerWidth / window.innerHeight;
 const frustumSize = 200;
 const left = -frustumSize * aspect / 2;
@@ -14,98 +16,63 @@ const bottom = -frustumSize / 2;
 const near = 0.1;
 const far = 1000;
 const camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
-// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
 camera.position.set(0, 50, 0);
 camera.lookAt(0, 0, 0);
 camera.up.set(0, 0, -1);
 
-const light = new THREE.AmbientLight(0x808080, 3); // soft white light
-// light.position.set(-1, 2, 4);
+// light setup
+const light = new THREE.AmbientLight(0x5060a0, 3); // dark bluish ambient light
+light.position.set(0, 30, 0);
 scene.add(light);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
-directionalLight.position.set(-1, 2, 4);
+const sunIntensity = 5;
+const directionalLight = new THREE.DirectionalLight(0xffffff, sunIntensity); // bright white sunlight
+directionalLight.position.set(0, 30, 0);
 scene.add(directionalLight);
 
+// renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-console.log(window.devicePixelRatio);
 renderer.setPixelRatio(window.devicePixelRatio);
+// renderer.shadowMap.enabled = true;
 // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-document.body.appendChild(renderer.domElement);
+// document.body.appendChild(renderer.domElement);
 
+// overlay text and add canvas to document
+const container = document.getElementById('canvas-container');
+const clockTime = document.getElementById('current-time');
+const clockDay = document.getElementById('current-day');
+container.appendChild(renderer.domElement);
 
-const sphere_geometry = new THREE.SphereGeometry(1, 16, 16);
-const sphere_material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
-const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
-sphere.translateY(1);
-
+// ground
 const geometry = new THREE.PlaneGeometry(frustumSize, frustumSize);
-const material = new THREE.MeshBasicMaterial({ color: 0x11cc44, side: THREE.DoubleSide });
-const square = new THREE.Mesh(geometry, material);
-square.rotation.x = -Math.PI / 2;
-scene.add(square);
+const material = new THREE.MeshPhongMaterial({ color: 0x11cc44, side: THREE.DoubleSide });
+const ground = new THREE.Mesh(geometry, material);
+ground.receiveShadow = true;
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
 
-function loadBeeModel() {
-    return new Promise((resolve, reject) => {
-        loader.load('bee.glb', (gltf) => {
-            gltf.scene.children.forEach((child) => {
-                child.rotation.y += -Math.PI / 2;
-            });
 
-            gltf.scene.traverse((child) => {
-                if (child.isMesh && child.material.map) {
-                    child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                    child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
-                    child.material.needsUpdate = true;
-                }
-            });
-            resolve(gltf.scene);
-        }, undefined, (error) => {
-            console.error(error);
-            reject(error);
-        });
-    });
+var patches = []
+for (let i = 0; i < 10; i++) {
+    const patch = new Patch(frustumSize);
+    console.log(patch.position);
+    scene.add(patch.mesh);
+    patches.push(patch);
 }
 
-const beeTemplate = await loadBeeModel();
-
-// const bee = beeTemplate.clone(true);
-const lowerBound = Math.min(frustumSize * .1, 10);
-const upperBound = Math.max(frustumSize * .9, frustumSize - 10);
-const centerMargin = frustumSize / 2;
-function getNewGoal() {
-    const x = centerMargin - THREE.MathUtils.randInt(lowerBound, upperBound);
-    const y = THREE.MathUtils.randInt(5, 15);
-    const z = centerMargin - THREE.MathUtils.randInt(lowerBound, upperBound);
-    return new THREE.Vector3(x, y, z);
-}
+const hive = new Hive(scene, renderer, frustumSize);
 
 var bees = []
 for (let i = 0; i < 10; i++) {
-    const bee = {
-        model: beeTemplate.clone(true),
-        target: getNewGoal(),
-        init: function () {
-            this.model.position.copy(getNewGoal());
-        },
-        move: function (delta) {
-            this.model.lookAt(this.target);
-            const distance = this.model.position.distanceTo(this.target);
-            const step = delta;
-            if (distance < step) {
-                this.target = getNewGoal();
-            } else {
-                const direction = new THREE.Vector3().subVectors(this.target, this.model.position);
-                this.model.position.addScaledVector(direction, 1 / 2000 * step);
-            }
-        }
-    }
+    const bee = new Bee(scene, renderer, hive, frustumSize);
     bees.push(bee);
 }
 
-bees.forEach((bee) => { bee.init(); scene.add(bee.model) });
-
 let lastTime = 0;
+let currTime = 0.5;
+let currDay = 0;
+const MIN_PER_DAY = 0.5;
 
 function animate(time) {
     const delta = time - lastTime;
@@ -117,6 +84,23 @@ function animate(time) {
     }
 
     bees.forEach((bee) => { bee.move(delta) });
+
+    currTime += delta / (MIN_PER_DAY * 60 * 1000);
+    if (currTime >= 1) {
+        currTime = 0;
+        currDay += 1;
+    }
+
+    const hour = Math.floor(currTime * 24);
+    const minute = Math.floor(60 * (24 * currTime - hour));
+    const d = 23.5 * Math.PI / 180;
+    const lightLevel = Math.max(0, Math.min(1, Math.cos(d) * Math.cos((currTime - 0.5) * Math.PI * 1.3)))
+
+    directionalLight.intensity = lightLevel * sunIntensity;
+
+    clockTime.innerText = `${String(hour).padStart(2, 0)}:${String(minute).padStart(2, 0)}`;
+    clockDay.innerText = currDay;
+
     renderer.render(scene, camera);
 }
 

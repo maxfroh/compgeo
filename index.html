@@ -1,13 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>comp geo</title>
-    <style>
-      body { margin: 0; }
-    </style>
-  </head>
-  <body>
-    <script type="module" src="main.js"></script>
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <title>Beelaunay Triangulation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    /* #canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    } */
+
+    #clock-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-left: calc(-50vw + 10px);
+      margin-top: calc(-50vh + 10px);
+      z-index: 2;
+      color: #ffffff;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container"></div>
+  <div id="clock-text">Day <span id="current-day">0</span> <span id="current-time">00:00</span></div>
+
+  <script type="module" src="main.js"></script>
+</body>
+
 </html>
