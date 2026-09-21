@@ -4,8 +4,18 @@ import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 const loader = new GLTFLoader();
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 75, 0);
+
+const aspect = window.innerWidth / window.innerHeight;
+const frustumSize = 200;
+const left = -frustumSize * aspect / 2;
+const right = frustumSize * aspect / 2;
+const top = frustumSize / 2;
+const bottom = -frustumSize / 2;
+const near = 0.1;
+const far = 1000;
+const camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 50, 0);
 camera.lookAt(0, 0, 0);
 camera.up.set(0, 0, -1);
 
@@ -16,12 +26,11 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
 directionalLight.position.set(-1, 2, 4);
 scene.add(directionalLight);
 
-camera.position.z = 5;
-
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+console.log(window.devicePixelRatio);
+renderer.setPixelRatio(window.devicePixelRatio);
+// renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 
@@ -29,10 +38,8 @@ const sphere_geometry = new THREE.SphereGeometry(1, 16, 16);
 const sphere_material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
 const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
 sphere.translateY(1);
-// scene.add(sphere);
 
-const size = 100;
-const geometry = new THREE.PlaneGeometry(size, size);
+const geometry = new THREE.PlaneGeometry(frustumSize, frustumSize);
 const material = new THREE.MeshBasicMaterial({ color: 0x11cc44, side: THREE.DoubleSide });
 const square = new THREE.Mesh(geometry, material);
 square.rotation.x = -Math.PI / 2;
@@ -63,11 +70,13 @@ function loadBeeModel() {
 const beeTemplate = await loadBeeModel();
 
 // const bee = beeTemplate.clone(true);
-
+const lowerBound = Math.min(frustumSize * .1, 10);
+const upperBound = Math.max(frustumSize * .9, frustumSize - 10);
+const centerMargin = frustumSize / 2;
 function getNewGoal() {
-    const x = 50 - THREE.MathUtils.randInt(10, 90);
+    const x = centerMargin - THREE.MathUtils.randInt(lowerBound, upperBound);
     const y = THREE.MathUtils.randInt(5, 15);
-    const z = 50 - THREE.MathUtils.randInt(10, 90);
+    const z = centerMargin - THREE.MathUtils.randInt(lowerBound, upperBound);
     return new THREE.Vector3(x, y, z);
 }
 
@@ -87,7 +96,7 @@ for (let i = 0; i < 10; i++) {
                 this.target = getNewGoal();
             } else {
                 const direction = new THREE.Vector3().subVectors(this.target, this.model.position);
-                this.model.position.addScaledVector(direction, 1 / 1000 * step);
+                this.model.position.addScaledVector(direction, 1 / 2000 * step);
             }
         }
     }
@@ -108,11 +117,6 @@ function animate(time) {
     }
 
     bees.forEach((bee) => { bee.move(delta) });
-    // const targetRotation = new THREE.Matrix4();
-    // targetRotation.lookAt(bee.position, beeTarget, bee.up);
-    // const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(targetRotation);
-    // bee.quaternion.rotateTowards(targetQuaternion, delta);
-
     renderer.render(scene, camera);
 }
 
