@@ -5,33 +5,53 @@
   <meta charset="utf-8">
   <title>Beelaunay Triangulation</title>
   <style>
+    @font-face {
+      font-family: 'Atkinson Hyperlegible Mono';
+      src: url('fonts/AtkinsonHyperlegibleMono-Regular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Atkinson Hyperlegible Mono';
+      src: url('fonts/AtkinsonHyperlegibleMono-Bold.woff2') format('woff2');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Atkinson Hyperlegible Mono';
+      src: url('fonts/AtkinsonHyperlegibleMono-RegularItalic.woff2') format('woff2');
+      font-weight: normal;
+      font-style: italic;
+    }
+
+    * {
+      font-family: 'Atkinson Hyperlegible Mono', sans-serif;
+    }
+
     body {
-      margin: 0;
+      margin: 2vw;
       overflow: hidden;
-      background: #111;
+      background: #000000;
     }
 
     #canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
       z-index: 1;
     }
 
-    /* #canvas-container canvas {
+    #canvas-container canvas {
       display: block;
-      width: 100% !important;
-      height: 100% !important;
-    } */
+      width: 100vw !important;
+      height: 100vh !important;
+    }
 
     #clock-text {
       position: absolute;
       top: 50%;
       left: 50%;
-      margin-left: calc(-50vw + 10px);
-      margin-top: calc(-50vh + 10px);
+      margin-left: calc(-50vw + 2%);
+      margin-top: calc(-50vh + 2%);
       z-index: 2;
       color: #ffffff;
       font-family: monospace;
@@ -44,7 +64,10 @@
 
 <body>
   <div id="canvas-container"></div>
-  <div id="clock-text">Day <span id="current-day">0</span> <span id="current-time">00:00</span></div>
+
+  <div id="clock-text">
+    Day <span id="current-day">0</span> <span id="current-time">00:00</span>
+  </div>
 
   <script type="module" src="main.js"></script>
 </body>

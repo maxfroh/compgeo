@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/Addons.js';
-import { Patch } from './patch.js';
-import { Hive, Bee } from './bee.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { Line2, LineGeometry } from 'three/examples/jsm/Addons.js';
 
+import { Hive, Patch } from './location.js';
+import { Bee } from './bee.js';
+import { weightedVoronoi } from 'd3-weighted-voronoi';
 
 const scene = new THREE.Scene();
 
@@ -52,27 +54,73 @@ ground.receiveShadow = true;
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
+const hive = new Hive(scene, renderer, frustumSize);
 
-var patches = []
-for (let i = 0; i < 10; i++) {
+const patches = []
+for (let i = 0; i < 20; i++) {
     const patch = new Patch(frustumSize);
-    console.log(patch.position);
     scene.add(patch.mesh);
     patches.push(patch);
 }
 
-const hive = new Hive(scene, renderer, frustumSize);
-
-var bees = []
-for (let i = 0; i < 10; i++) {
-    const bee = new Bee(scene, renderer, hive, frustumSize);
+const bees = []
+for (let i = 0; i < 20; i++) {
+    const bee = new Bee(scene, renderer, frustumSize, hive, patches);
     bees.push(bee);
 }
 
 let lastTime = 0;
 let currTime = 0.5;
 let currDay = 0;
+let frame = 0;
 const MIN_PER_DAY = 0.5;
+
+const trackedOutlines = [];
+/**
+ * @param {Array<Array<Array<number>} cells
+ */
+function drawVoronoi(cells) {
+    trackedOutlines.forEach((outline) => {
+        scene.remove(outline);
+        outline.geometry.dispose();
+        outline.material.dispose();
+    });
+    trackedOutlines.length = 0;
+
+    const total = cells.length;
+    cells.forEach((cell, i) => {
+        const points = cell.map((point) => new THREE.Vector3(point[0], 2, point[1]));
+        // close the loop
+        points.push(points[0]);
+        const geometry = new LineGeometry().setFromPoints(points);
+        const material = new LineMaterial({
+            color: 0xffeeee,
+            // color: new THREE.Color(`hsl(${180 + 360 * Math.cos(i) * Math.sin(i)}, ${80 + 15 * Math.cos(i)}%, ${60 + 10 * Math.sin(i)}%)`),
+            linewidth: 4,
+        });
+        const outline = new Line2(geometry, material);
+        trackedOutlines.push(outline);
+        scene.add(outline);
+    })
+}
+
+/**
+ * @param {Hive} hive
+ * @param {number} currTime 
+ */
+function processVoronoi(hive, currTime) {
+    // console.log(patches[0].getWeight(hive, currTime), patches[4].getWeight(hive, currTime));
+    const calcVoronoi = weightedVoronoi()
+        .x(function (patch) { return patch.position.x; }) // x = patch x-coord
+        .y(function (patch) { return patch.position.z; }) // y is actually patch z-coord!
+        .weight(function (patch) { return patch.getWeight(hive, currTime); }) // use patch's weight function
+        .clip([[-frustumSize / 2, -frustumSize / 2], [-frustumSize / 2, frustumSize / 2], [frustumSize / 2, frustumSize / 2], [frustumSize / 2, -frustumSize / 2]]);  // set the clipping polygon
+    const cells = calcVoronoi(patches);
+    drawVoronoi(cells);
+    return cells;
+}
+
+processVoronoi(hive, currTime * 24);
 
 function animate(time) {
     const delta = time - lastTime;
@@ -83,7 +131,7 @@ function animate(time) {
         return;
     }
 
-    bees.forEach((bee) => { bee.move(delta) });
+    bees.forEach((bee) => { bee.update(delta) });
 
     currTime += delta / (MIN_PER_DAY * 60 * 1000);
     if (currTime >= 1) {
@@ -101,7 +149,21 @@ function animate(time) {
     clockTime.innerText = `${String(hour).padStart(2, 0)}:${String(minute).padStart(2, 0)}`;
     clockDay.innerText = currDay;
 
+    frame += 1;
+    if (frame > 11) {
+        frame = 0;
+    }
+
+    processVoronoi(hive, currTime * 24);
+
     renderer.render(scene, camera);
 }
 
 renderer.setAnimationLoop(animate);
+
+// window.addEventListener('resize', () => {
+//     // camera.aspect = window.innerWidth / window.innerHeight;
+//     // camera.updateProjectionMatrix();
+//     renderer.setSize(window.innerWidth, window.innerHeight);
+// });
+

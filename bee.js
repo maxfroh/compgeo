@@ -3,23 +3,6 @@ import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { randInt } from 'three/src/math/MathUtils.js';
 
 
-
-export class Hive {
-    constructor(scene, renderer, frustumSize) {
-        this.scene = scene;
-        this.radius = 4;
-        this.segments = 6;
-        this.position = new THREE.Vector3(0, 2, 0);
-        this.geometry = new THREE.CircleGeometry(this.radius, this.segments);
-        this.material = new THREE.MeshPhongMaterial({ color: 0xa36700, side: THREE.DoubleSide });
-        this.mesh = new THREE.Mesh(this.geometry, this.material)
-        this.mesh.position.copy(this.position);
-        this.mesh.rotation.x = -Math.PI / 2
-        this.scene.add(this.mesh);
-    }
-}
-
-
 export class Bee {
     // Variables for the shared static template model
     static loader = new GLTFLoader();
@@ -45,6 +28,7 @@ export class Bee {
                         child.material.needsUpdate = true;
                     }
                 });
+                gltf.scene.scale.set(2, 2, 2);
                 Bee.beeTemplate = gltf.scene;
                 Bee.isLoaded = true;
                 resolve(gltf.scene);
@@ -62,8 +46,9 @@ export class Bee {
      * @param {THREE.WebGLRenderer} renderer
      * @param {number} frustumSize
      * @param {Hive} hive  
+     * @param {Array<Patch>} patches 
      */
-    constructor(scene, renderer, hive, frustumSize) {
+    constructor(scene, renderer, frustumSize, hive, patches) {
         this.scene = scene;
 
         if (Bee.isLoaded) {
@@ -76,11 +61,12 @@ export class Bee {
 
         this.hive = hive;
         this.goingHome = false;
+        this.nectarCollected = 0;
 
         this.lowerBound = Math.min(frustumSize * .1, 10);
         this.upperBound = Math.max(frustumSize * .9, frustumSize - 10);
         this.centerMargin = frustumSize / 2;
-        this.target = this.calcNewGoal();
+        this.target = this.getNewTarget();
 
         this.speed = 1 / 50;
     }
@@ -89,6 +75,13 @@ export class Bee {
         this.mesh = Bee.beeTemplate.clone(true);
         this.mesh.position.copy(this.hive.position);
         this.scene.add(this.mesh);
+    }
+
+    /**
+     * @param {number} delta 
+     */
+    update(delta) {
+        this.move(delta);
     }
 
     /**
@@ -110,7 +103,7 @@ export class Bee {
                 this.target = this.hive.position;
                 this.goingHome = true;
             } else {
-                this.target = this.calcNewGoal();
+                this.target = this.getNewTarget();
                 this.goingHome = false;
             }
         } else {
@@ -119,11 +112,10 @@ export class Bee {
         }
     }
 
-    calcNewGoal() {
+    getNewTarget() {
         const x = this.centerMargin - randInt(this.lowerBound, this.upperBound);
         const y = randInt(4, 10);
         const z = this.centerMargin - randInt(this.lowerBound, this.upperBound);
         return new THREE.Vector3(x, y, z);
     }
-
 }
