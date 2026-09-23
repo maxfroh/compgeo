@@ -3,12 +3,15 @@ import { randInt } from 'three/src/math/MathUtils.js';
 
 
 export class Location {
-    static locations = [];
+    constructor() {
+        this.bees_present = 0;
+    }
 }
 
 
-export class Hive {
+export class Hive extends Location {
     constructor(scene, renderer, frustumSize) {
+        super();
         this.scene = scene;
         const x = 0;
         const y = 3;
@@ -26,10 +29,12 @@ export class Hive {
 }
 
 
-export class Patch {
+export class Patch extends Location {
+    static BLACK = new THREE.Color().setHSL(0, 0, 0);
     static label = 0;
 
     constructor(frustumSize) {
+        super();
         this.name = Patch.label;
         Patch.label += 1;
 
@@ -55,37 +60,27 @@ export class Patch {
         this.nectar_base_level = randInt(2, 3) * this.radius;
         this.nectar_level = this.nectar_base_level;
         this.recoup_timer = 0;
-        this.bees_present = 0;
         this.average_attractiveness = randInt(1, 100) / 100;
     }
 
 
     update(delta) {
-        if (this.nectar_level == 0) {
-            if (this.recoup_timer < 1) {
-                this.recoup_time += delta / 1000;
-                this.material.color.set(0x000000);
-                return 0;
-            } else {
-                this.recoup_timer = 0;
-                this.material.color.set(this.color);
-                this.nectar_level = Math.min(
-                    this.nectar_base_level,
-                    this.nectar_level + delta / (1000 * 4)
-                );
-            }
+        const currentColor = new THREE.Color().lerpColors(Patch.BLACK, this.color, this.nectar_level / this.nectar_base_level);
+        this.material.color.set(currentColor);
+
+        if (this.nectar_level == 0 && this.recoup_timer < 3) {
+            this.recoup_timer += delta;
         } else {
+            this.recoup_timer = 0;
             this.nectar_level = Math.min(
                 this.nectar_base_level,
-                this.nectar_level + delta / (1000 * 4)
+                this.nectar_level + delta
             );
-
         }
-
     }
 
     collectNectar(delta) {
-        const nectar = Math.min(this.nectar_level, 4 * delta / (1000));
+        const nectar = Math.min(this.nectar_level, 4 * delta);
         this.nectar_level = Math.max(
             0,
             this.nectar_level -= nectar

@@ -54,17 +54,20 @@ ground.receiveShadow = true;
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
+const NUM_BEES = 20;
+const NUM_PATCHES = 30;
+
 const hive = new Hive(scene, renderer, frustumSize);
 
 const patches = []
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < NUM_PATCHES; i++) {
     const patch = new Patch(frustumSize);
     scene.add(patch.mesh);
     patches.push(patch);
 }
 
 const bees = []
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < NUM_BEES; i++) {
     const bee = new Bee(scene, renderer, frustumSize, hive, patches);
     bees.push(bee);
 }
@@ -140,10 +143,12 @@ function animate(time) {
         return;
     }
 
-    bees.forEach((bee) => { bee.update(delta) });
-    patches.forEach((patch) => { patch.update(delta) });
+    const deltaSeconds = delta / 1000; 
 
-    currTime += delta / (MIN_PER_DAY * 60 * 1000);
+    bees.forEach((bee) => { bee.update(deltaSeconds) });
+    patches.forEach((patch) => { patch.update(deltaSeconds) });
+
+    currTime += deltaSeconds / (MIN_PER_DAY * 60);
     if (currTime >= 1) {
         currTime = 0;
         currDay += 1;
