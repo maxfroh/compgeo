@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { randInt } from 'three/src/math/MathUtils.js';
+import { Patch } from './location';
 
 
 export class Bee {
@@ -60,7 +61,9 @@ export class Bee {
         }
 
         this.hive = hive;
+        this.patches = patches;
         this.goingHome = false;
+        this.gatheringNectar = false;
         this.nectarCollected = 0;
 
         this.lowerBound = Math.min(frustumSize * .1, 10);
@@ -93,26 +96,75 @@ export class Bee {
             return;
         }
 
-        this.mesh.lookAt(this.target);
-        const distance = this.mesh.position.distanceTo(this.target);
+        this.mesh.lookAt(this.target.position);
+        const distance = this.mesh.position.distanceTo(this.target.position);
         const step = this.speed * delta;
-        if (distance < step) {
-            this.mesh.position.copy(this.target);
 
-            if (!this.goingHome) {
-                this.target = this.hive.position;
+        if (this.gatheringNectar) {
+            this.nectarTimer += (delta / 1000);
+            this.nectarCollected += this.target.collectNectar(delta);
+            if (this.nectarCollected >= 6) {
+                this.gatheringNectar = false;
+                this.target.bees_present -= 1;
+                this.target = this.hive;
                 this.goingHome = true;
-            } else {
-                this.target = this.getNewTarget();
-                this.goingHome = false;
+            }
+            if (this.nectarTimer > 2) {
+                this.gatheringNectar = false;
+                if (this.nectarCollected >= 6) {
+                    this.target.bees_present -= 1;
+                    this.target = this.hive;
+                    this.goingHome = true;
+                } else {
+                    this.target = this.getNewTarget();
+                }
             }
         } else {
-            const direction = new THREE.Vector3().subVectors(this.target, this.mesh.position).normalize();
-            this.mesh.position.addScaledVector(direction, step);
+            if (distance < step) {
+                this.mesh.position.copy(this.target.position);
+                this.target.bees_present += 1;
+
+                if (!this.goingHome) {
+                    this.gatheringNectar = true;
+                    this.nectarTimer = 0;
+                    // this.goingHome = true;
+                } else if (!this.gatheringNectar) {
+                    if (this.goingHome) {
+                        this.nectarCollected = 0;
+                        this.target = this.getNewTarget();
+                        this.goingHome = false;
+                    }
+                }
+            } else {
+                const direction = new THREE.Vector3().subVectors(this.target.position, this.mesh.position).normalize();
+                this.mesh.position.addScaledVector(direction, step);
+            }
+
         }
     }
 
+    /**
+     * @returns {Patch}
+     */
     getNewTarget() {
+        let newTarget = this.patches[Math.floor(Math.random() * this.patches.length)];
+        let tries = 10;
+        if (this.target) {
+            while (
+                newTarget.position.distanceTo(this.target.position) < 0.000001 ||
+                newTarget.nectar_level < 0.1
+            ) {
+                newTarget = this.patches[Math.floor(Math.random() * this.patches.length)];
+                tries -= 1;
+                if (tries <= 0) {
+                    console.log("Couldn't find anyone... going home!");
+                    this.goingHome = true;
+                    this.gatheringNectar = false;
+                    return this.hive;
+                }
+            }
+        }
+        return newTarget;
         const x = this.centerMargin - randInt(this.lowerBound, this.upperBound);
         const y = randInt(4, 10);
         const z = this.centerMargin - randInt(this.lowerBound, this.upperBound);

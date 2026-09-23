@@ -64,7 +64,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 const bees = []
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 30; i++) {
     const bee = new Bee(scene, renderer, frustumSize, hive, patches);
     bees.push(bee);
 }
@@ -73,7 +73,7 @@ let lastTime = 0;
 let currTime = 0.5;
 let currDay = 0;
 let frame = 0;
-const MIN_PER_DAY = 0.5;
+const MIN_PER_DAY = 1;
 
 const trackedOutlines = [];
 /**
@@ -104,18 +104,27 @@ function drawVoronoi(cells) {
     })
 }
 
+let old_cell = [];
+
 /**
  * @param {Hive} hive
  * @param {number} currTime 
  */
 function processVoronoi(hive, currTime) {
-    // console.log(patches[0].getWeight(hive, currTime), patches[4].getWeight(hive, currTime));
+
+    // console.log(patches[0].getWeight(hive, currTime) / patches[4].getWeight(hive, currTime), patches[10].getWeight(hive, currTime) / patches[8].getWeight(hive, currTime));
     const calcVoronoi = weightedVoronoi()
         .x(function (patch) { return patch.position.x; }) // x = patch x-coord
         .y(function (patch) { return patch.position.z; }) // y is actually patch z-coord!
         .weight(function (patch) { return patch.getWeight(hive, currTime); }) // use patch's weight function
         .clip([[-frustumSize / 2, -frustumSize / 2], [-frustumSize / 2, frustumSize / 2], [frustumSize / 2, frustumSize / 2], [frustumSize / 2, -frustumSize / 2]]);  // set the clipping polygon
     const cells = calcVoronoi(patches);
+    if (old_cell.length == 0) {
+        old_cell = Array.from(cells[4][2]);
+    } else {
+        // console.log(new THREE.Vector2(old_cell[0], old_cell[1]).distanceTo(new THREE.Vector2(cells[4][2][0], cells[4][2][1])));
+        old_cell = Array.from(cells[4][2]);
+    }
     drawVoronoi(cells);
     return cells;
 }
@@ -132,6 +141,7 @@ function animate(time) {
     }
 
     bees.forEach((bee) => { bee.update(delta) });
+    patches.forEach((patch) => { patch.update(delta) });
 
     currTime += delta / (MIN_PER_DAY * 60 * 1000);
     if (currTime >= 1) {

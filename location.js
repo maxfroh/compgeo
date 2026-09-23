@@ -27,53 +27,112 @@ export class Hive {
 
 
 export class Patch {
+    static label = 0;
+
     constructor(frustumSize) {
+        this.name = Patch.label;
+        Patch.label += 1;
+
         const lowerBound = Math.min(frustumSize * .1, 10);
         const upperBound = Math.max(frustumSize * .9, frustumSize - 10);
         const centerMargin = frustumSize / 2;
         const x = centerMargin - randInt(lowerBound, upperBound);
         const y = 3;
         const z = centerMargin - randInt(lowerBound, upperBound);
-        const radius = 1;
+        this.radius = randInt(1, 3);
         const segments = 6;
 
         this.position = new THREE.Vector3(x, y, z);
-        this.geometry = new THREE.CircleGeometry(radius, segments);
-        this.material = new THREE.MeshPhongMaterial({ color: 0xee2200, side: THREE.DoubleSide });
+        this.geometry = new THREE.CircleGeometry(this.radius, segments);
+        this.color = new THREE.Color(
+            `hsl(${randInt(270, 320)}, ${randInt(50, 80)}%, ${randInt(50, 80)}%)`
+        )
+        this.material = new THREE.MeshPhongMaterial({ color: this.color, side: THREE.DoubleSide });
         this.mesh = new THREE.Mesh(this.geometry, this.material)
         this.mesh.position.copy(this.position);
         this.mesh.rotation.x = -Math.PI / 2
 
-        this.nectar_level = randInt(2,6);
-        this.bees_present = 1;
-        this.average_attractiveness = randInt(2,6);
+        this.nectar_base_level = randInt(2, 3) * this.radius;
+        this.nectar_level = this.nectar_base_level;
+        this.recoup_timer = 0;
+        this.bees_present = 0;
+        this.average_attractiveness = randInt(1, 100) / 100;
     }
+
+
+    update(delta) {
+        if (this.nectar_level == 0) {
+            if (this.recoup_timer < 1) {
+                this.recoup_time += delta / 1000;
+                this.material.color.set(0x000000);
+                return 0;
+            } else {
+                this.recoup_timer = 0;
+                this.material.color.set(this.color);
+                this.nectar_level = Math.min(
+                    this.nectar_base_level,
+                    this.nectar_level + delta / (1000 * 4)
+                );
+            }
+        } else {
+            this.nectar_level = Math.min(
+                this.nectar_base_level,
+                this.nectar_level + delta / (1000 * 4)
+            );
+
+        }
+
+    }
+
+    collectNectar(delta) {
+        const nectar = Math.min(this.nectar_level, 4 * delta / (1000));
+        this.nectar_level = Math.max(
+            0,
+            this.nectar_level -= nectar
+        );
+        return nectar;
+    }
+
 
     /**
      * @param {Hive} hive
      * @param {number} time 
      */
     getWeight(hive, time) {
-        return this.#f(hive.position, this.position, this.nectar_level, this.bees_present, time, this.average_attractiveness);
-        // return Math.log1p(rawWeight) * 1000;
+        // if (this.name == 2) {
+        //     console.log(`Patch ${this.name}: ${this.#f(hive.position, this.position, this.nectar_base_level, this.nectar_level, this.bees_present, time, this.average_attractiveness)}`);
+        // }
+        return this.#f(hive.position, this.position, this.nectar_base_level, this.nectar_level, this.bees_present, time, this.average_attractiveness);
     }
 
 
     /**
      * @param {Vector3} p_h The location of the hive.
      * @param {Vector3} p_t The location of the target patch.
-     * @param {number} n The total nectar capacity of the target (number of flowers).
+     * @param {number} size The total nectar capacity of the target.
+     * @param {number} n The current nectar capacity of the target.
      * @param {number} b The current number of bees at the target.
      * @param {number} t The time of day (any number in [0, 24)).
      * @param {number} a The average attractiveness of flowers in the target patch.
      * @returns {number} The weight of the patch. 
     */
-    #f(p_h, p_t, n, b, t, a) {
-        return Patch.#z(t) * ((1 - Patch.#p(t)) + Patch.#p(t) * 1 / (1 + p_h.distanceTo(p_t))) * n * a * (1 / b);
-    }
-
-    static #p(t) {
-        return 1 - Patch.#z(t) / 2
+    #f(p_h, p_t, size, n, b, t, a) {
+        return (
+            // (
+            //     Math.log(
+            //         0.154 * Patch.#z(t) / (1 + p_h.distanceTo(p_t))
+            //     )
+            // ) +
+            // (
+            //     -1 * (1 - Patch.#z(t)) +
+            //     Patch.#z(t) * 1 / (p_h.distanceTo(p_t) + 1)
+            // ) *
+            100 *
+            Patch.#z(t) *
+            Math.pow(n / size, 2) *
+            a *
+            (2 / (1 + Math.exp(b / size)))
+        );
     }
 
     /**
@@ -85,8 +144,8 @@ export class Patch {
     static #z(t) {
         const _t = Math.min(24.01, Math.max(t, 1.01));
         const val = Math.min(
-            2 * Math.min(
-                1,
+            1,
+            (
                 10 * (
                     1 / (1.08 * 0.23 * (_t - 1) * Math.sqrt(2 * Math.PI))
                 ) *
@@ -100,6 +159,6 @@ export class Patch {
                 )
             )
         );
-        return isNaN(val) || val <= 0 ? 0 : val;
+        return isNaN(val) || val <= 0 ? 0 : (val);
     }
 }
