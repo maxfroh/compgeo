@@ -39,12 +39,22 @@ renderer.setPixelRatio(window.devicePixelRatio);
 // renderer.shadowMap.enabled = true;
 // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // document.body.appendChild(renderer.domElement);
+window.addEventListener('resize', () => {
+    const aspect = window.innerWidth / window.innerHeight;
+    camera.left = -frustumSize * aspect / 2;
+    camera.right = frustumSize * aspect / 2;
+    camera.top = frustumSize / 2;
+    camera.bottom = -frustumSize / 2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
 
 // overlay text and add canvas to document
 const container = document.getElementById('canvas-container');
 const clockTime = document.getElementById('current-time');
 const clockDay = document.getElementById('current-day');
-container.appendChild(renderer.domElement);
+container.prepend(renderer.domElement);
 
 // ground
 const geometry = new THREE.PlaneGeometry(frustumSize, frustumSize);
@@ -76,7 +86,7 @@ let lastTime = 0;
 let currTime = 0.5;
 let currDay = 0;
 let frame = 0;
-const MIN_PER_DAY = 1;
+const MIN_PER_DAY = .2;
 
 const trackedOutlines = [];
 /**
@@ -114,7 +124,6 @@ let old_cell = [];
  * @param {number} currTime 
  */
 function processVoronoi(hive, currTime) {
-
     // console.log(patches[0].getWeight(hive, currTime) / patches[4].getWeight(hive, currTime), patches[10].getWeight(hive, currTime) / patches[8].getWeight(hive, currTime));
     const calcVoronoi = weightedVoronoi()
         .x(function (patch) { return patch.position.x; }) // x = patch x-coord
@@ -175,10 +184,4 @@ function animate(time) {
 }
 
 renderer.setAnimationLoop(animate);
-
-// window.addEventListener('resize', () => {
-//     // camera.aspect = window.innerWidth / window.innerHeight;
-//     // camera.updateProjectionMatrix();
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-// });
 

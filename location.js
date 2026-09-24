@@ -48,6 +48,7 @@ export class Patch extends Location {
         const segments = 6;
 
         this.position = new THREE.Vector3(x, y, z);
+        console.log(`Patch ${this.name} is ${this.position.distanceTo(new THREE.Vector3(0,0,0))} from the hive`);
         this.geometry = new THREE.CircleGeometry(this.radius, segments);
         this.color = new THREE.Color(
             `hsl(${randInt(270, 320)}, ${randInt(50, 80)}%, ${randInt(50, 80)}%)`
@@ -123,11 +124,17 @@ export class Patch extends Location {
             //     Patch.#z(t) * 1 / (p_h.distanceTo(p_t) + 1)
             // ) *
             100 *
-            Patch.#z(t) *
-            Math.pow(n / size, 2) *
+            Patch.#q(p_h, p_t, t) *
+            Math.pow(n / size, 4) *
             a *
             (2 / (1 + Math.exp(b / size)))
         );
+    }
+
+    static #q(p_h, p_t, t) {
+        const d = p_h.distanceTo(p_t);
+        console.log(10 * (d) / Math.pow(10 * Patch.#z(t) + 0.1 * d, 3));
+        return 10 * (d) / Math.pow(10 * Patch.#z(t) + 0.1 * d, 3);
     }
 
     /**
