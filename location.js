@@ -125,9 +125,9 @@ export class Patch extends Location {
             // ) *
             100 *
             Patch.#q(p_h, p_t, t) *
-            Math.pow(n / size, 4) *
-            a *
-            (2 / (1 + Math.exp(b / size)))
+            // Math.pow(n / size, 4) *
+            a * 1
+            // (2 / (1 + Math.exp(b / size)))
         );
     }
 
@@ -145,19 +145,21 @@ export class Patch extends Location {
      */
     static #z(t) {
         const _t = Math.min(24.01, Math.max(t, 1.01));
+        const s = 0.16;
+        const m = 13.74;
         const val = Math.min(
             1,
             (
                 10 * (
-                    1 / (1.08 * 0.23 * (_t - 1) * Math.sqrt(2 * Math.PI))
+                    1 / (1.08 * s * (_t - 1) * Math.sqrt(2 * Math.PI))
                 ) *
                 Math.exp(
                     (
                         -1 * Math.pow(
-                            (Math.log(1.08 * (_t - 1)) - Math.log(10)), 2
+                            (Math.log(1.08 * (_t - 1)) - Math.log(m)), 2
                         )
                     ) /
-                    (2 * Math.pow(0.23, 2))
+                    (2 * Math.pow(s, 2))
                 )
             )
         );
