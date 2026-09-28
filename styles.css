@@ -1,0 +1,152 @@
+.noto-sans-sc-medium {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.google-sans-code-regular {
+  font-family: 'Google Sans Code', monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.google-sans-code-italic {
+  font-family: 'Google Sans Code', monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.google-sans-code-bold {
+  font-family: 'Google Sans Code', monospace;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  src: url('fonts/AtkinsonHyperlegibleMono-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  src: url('fonts/AtkinsonHyperlegibleMono-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  src: url('fonts/AtkinsonHyperlegibleMono-RegularItalic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+}
+
+* {
+  font-family: 'Atkinson Hyperlegible Mono', 'Google Sans Code', 'Noto Sans SC', sans-serif;
+}
+
+:lang(zh) {
+  font-family: 'Noto Sans SC', 'SimSun', sans-serif;
+}
+
+footer {
+  font-size: x-small;
+}
+
+nav {
+  font-size: large;
+}
+
+.header p {
+  font-size: large;
+  color: rgb(60, 87, 91);
+}
+
+.h1 {
+  color: rgb(60, 87, 91);
+}
+
+h1 {
+  color: rgb(60, 87, 91);
+}
+
+h2.subtitle {
+  font-size: medium;
+}
+
+.article-body p,
+.article-body ul {
+  font-size: medium;
+}
+
+.article-body p {
+  text-indent: 2em;
+}
+
+.btn-outline-primary,
+.btn-primary {
+  border-color: #1E3741 !important;
+  color: #000000 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-primary:hover {
+  background-color: #3C575B !important;
+  border-color: #1E3741 !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #2B474E !important;
+  border-color: #132834 !important;
+  color: #ffffff !important;
+}
+
+@media screen and (max-width: 768px) {
+  p label {
+    font-size: 12px;
+  }
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+.invert-dark {
+  /* No filter in light mode, invert(1) in dark mode */
+  filter: light-dark(none, invert(1));
+}
+
+#canvas-container {
+  z-index: 1;
+  position: relative;
+  aspect-ratio: 1 / 1;
+}
+
+#canvas-container canvas {
+  display: block;
+}
+
+#clock-text {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  z-index: 2;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow:
+    1px 1px 0px #000,
+    2px 2px 0px #000;
+  pointer-events: none;
+}
