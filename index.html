@@ -32,12 +32,14 @@
                 </h1>
                 <h2 class="subtitle display-4 mb-3">Max Frohman | CSCI-716</h2>
               </div>
+              <hr>
               <div class="lh-lg fs-5 article-body">
-                <p>Hello</p>
+                <p>Honey bees, some of the most well-known pollinators, have dynamic foraging behaviors. Many factors influence how a honey bee decides where to forage, but one significant factor is the relative quality of a target flower patch. A bee’s assessment of patch quality is also multivariable, taking into consideration nectar and pollen availability, the time of day, the distance of the patch, and the needs of her colony. To visualize how a bee might navigate the world, flower patches in an environment can be modeled with a weighted Voronoi diagram. As seasons change and flower patches are visited, the Voronoi diagram will change as well, impacting where bees may decide to go.</p>
+                <p>While only modeling a subset of the factors bees use to make foraging decisions, a weighted Voronoi diagram can still simulate a sizable portion of them. This kind of model can play a useful role in understanding the local ecology of an area by visualizing how pollinators might move through their space. Along similar lines, flower patch attractiveness can be useful information for beekeepers, who must consider flower availability when placing new bee hives. Which kinds of flowers are foraged by a bee hive can determine the characteristics of honey the hive produces and can give hints as to when a hive may have abundances or dearths of food.</p>
               </div>
               <div class="row justify-content-center">
-                <div class="col px-3 mx-0">
-                  <div id="canvas-container">
+                <div class="col-12" id="simulation"> <!-- use id to jump to simulation -->
+                  <div id="canvas-container"> <!-- only let it run if it is in view -->
                     <div id="clock-text">
                       Day <span id="current-day">0</span> <span id="current-time">00:00</span>
                     </div>
@@ -45,7 +47,7 @@
                 </div>
               </div>
               <div class="lh-lg fs-5 article-body">
-                <p>Hello</p>
+                <p></p>
               </div>
             </div>
           </article>

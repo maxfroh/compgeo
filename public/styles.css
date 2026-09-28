@@ -91,7 +91,6 @@ h2.subtitle {
 
 .btn-outline-primary,
 .btn-primary {
-  /* background-color: #ffffff !important; */
   border-color: #1E3741 !important;
   color: #000000 !important;
 }
@@ -127,24 +126,10 @@ h2.subtitle {
   filter: light-dark(none, invert(1));
 }
 
-
-/* body {
-  margin: 2vw;
-  overflow: hidden;
-  background: #ffffff;
-} */
-
-/* #canvas-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */
-
 #canvas-container {
   z-index: 1;
   position: relative;
   aspect-ratio: 1 / 1;
-  /* width: 100vw !important; */
 }
 
 #canvas-container canvas {

@@ -40,13 +40,17 @@ const container = document.getElementById('canvas-container');
 
 // renderer
 function getWindowSize() {
-    const size = Math.min(container.clientWidth, container.clientHeight); 
+    let size = Math.min(container.clientWidth, container.clientHeight);
+    if (window.innerHeight * 0.96 > 0) {
+        size = Math.min(size, window.innerHeight * 0.96);
+    }
     return Math.floor(size);
 }
 console.log(window.innerWidth, window.innerHeight, container.clientWidth, container.clientHeight);
 
 const renderer = new THREE.WebGLRenderer();
 const windowSize = getWindowSize();
+container.setAttribute("style", `width: ${windowSize}px`);
 renderer.setSize(windowSize, windowSize);
 renderer.setPixelRatio(window.devicePixelRatio);
 // renderer.shadowMap.enabled = true;
@@ -60,6 +64,7 @@ window.addEventListener('resize', () => {
     camera.bottom = -frustumSize / 2;
     camera.updateProjectionMatrix();
     renderer.setSize(updatedSize, updatedSize);
+    container.setAttribute("style", `width: ${updatedSize}px`);
 });
 
 
