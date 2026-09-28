@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { randInt } from 'three/src/math/MathUtils.js';
 import { Patch } from './location';
+import { BEE_COLLECTION_TIME, BEE_NECTAR_CAPACITY, BEE_SPEED } from './parameters';
 
 
 export class Bee {
@@ -10,10 +11,6 @@ export class Bee {
     static beeTemplate = null;
     static isLoaded = false;
     static loadPromise = null;
-
-    //
-    static nectarCapacity = 6;
-    static speed = 20;
 
     static loadBeeModel(renderer) {
         if (Bee.loadPromise) {
@@ -96,20 +93,18 @@ export class Bee {
             const nectar = this.target.collectNectar ? this.target.collectNectar(delta) : 1;
             this.nectarCollected += (isNaN(nectar) ? 0 : nectar);
 
-            if (this.nectarTimer > 2 || this.nectarCollected >= Bee.nectarCapacity || nectar == 0) {
-                this.target.bees_present = Math.max(0, this.target.bees_present - 1);
-
+            if (this.nectarTimer > 2 || this.nectarCollected >= BEE_NECTAR_CAPACITY || nectar == 0) {
+                this.target.beesPresent = Math.max(0, this.target.beesPresent - 1);
+                this.nectarTimer = 0;
                 this.gatheringNectar = false;
 
-                if (this.nectarCollected >= Bee.nectarCapacity) {
+                if (this.nectarCollected >= BEE_NECTAR_CAPACITY) {
                     this.goingHome = true;
                     this.target = this.hive;
                 } else {
                     this.target = this.getNewTarget();
                     if (this.target === this.hive) {
                         this.goingHome = true;
-                    } else {
-                        this.nectarTimer = 0;
                     }
                 }
             }
@@ -130,15 +125,14 @@ export class Bee {
 
         this.mesh.lookAt(this.target.position);
         const distance = this.mesh.position.distanceTo(this.target.position);
-        const step = Bee.speed * delta;
+        const step = BEE_SPEED * delta;
 
         if (distance < step) {
             this.mesh.position.copy(this.target.position);
-            this.target.bees_present += 1;
+            this.target.beesPresent += 1;
 
             if (!this.goingHome) {
                 this.gatheringNectar = true;
-                this.nectarTimer = 0;
             } else {
                 this.nectarCollected = 0;
                 this.goingHome = false;
@@ -161,7 +155,7 @@ export class Bee {
         if (this.target && this.target !== this.hive) {
             while (
                 newTarget === this.target ||
-                (newTarget.nectar_level !== undefined && newTarget.nectar_level <= 0)
+                (newTarget.nectarLevel !== undefined && newTarget.nectarLevel <= 0)
             ) {
                 newTarget = this.patches[Math.floor(Math.random() * this.patches.length)];
                 tries -= 1;

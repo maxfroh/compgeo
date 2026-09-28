@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { randInt } from 'three/src/math/MathUtils.js';
+import { BEE_COLLECTION_TIME, MIN_PER_DAY } from './parameters';
 
 
 export class Location {
     constructor() {
-        this.bees_present = 0;
+        this.beesPresent = 0;
     }
 }
 
@@ -38,17 +39,17 @@ export class Patch extends Location {
         this.name = Patch.label;
         Patch.label += 1;
 
-        const lowerBound = Math.min(frustumSize * .1, 10);
-        const upperBound = Math.max(frustumSize * .9, frustumSize - 10);
+        this.lowerBound = Math.min(frustumSize * .1, 10);
+        this.upperBound = Math.max(frustumSize * .9, frustumSize - 10);
         const centerMargin = frustumSize / 2;
-        const x = centerMargin - randInt(lowerBound, upperBound);
+        const x = centerMargin - randInt(this.lowerBound, this.upperBound);
         const y = 3;
-        const z = centerMargin - randInt(lowerBound, upperBound);
+        const z = centerMargin - randInt(this.lowerBound, this.upperBound);
         this.radius = randInt(1, 3);
         const segments = 6;
 
         this.position = new THREE.Vector3(x, y, z);
-        console.log(`Patch ${this.name} is ${this.position.distanceTo(new THREE.Vector3(0,0,0))} from the hive`);
+        console.log(`Patch ${this.name} is ${this.position.distanceTo(new THREE.Vector3(0, 0, 0))} from the hive`);
         this.geometry = new THREE.CircleGeometry(this.radius, segments);
         this.color = new THREE.Color(
             `hsl(${randInt(270, 320)}, ${randInt(50, 80)}%, ${randInt(50, 80)}%)`
@@ -58,34 +59,39 @@ export class Patch extends Location {
         this.mesh.position.copy(this.position);
         this.mesh.rotation.x = -Math.PI / 2
 
-        this.nectar_base_level = randInt(2, 3) * this.radius;
-        this.nectar_level = this.nectar_base_level;
-        this.recoup_timer = 0;
-        this.average_attractiveness = randInt(1, 100) / 100;
+        this.nectarBaseLevel = randInt(2, 3) * this.radius;
+        this.nectarLevel = this.nectarBaseLevel;
+        this.recoupTimer = 0;
+        this.averageAttractiveness = randInt(1, 100) / 100;
     }
 
 
     update(delta) {
-        const currentColor = new THREE.Color().lerpColors(Patch.BLACK, this.color, this.nectar_level / this.nectar_base_level);
+        const currentColor = new THREE.Color().lerpColors(Patch.BLACK, this.color, this.nectarLevel / this.nectarBaseLevel);
         this.material.color.set(currentColor);
-
-        if (this.nectar_level == 0 && this.recoup_timer < 3) {
-            this.recoup_timer += delta;
+        if(this.name == 2) {
+            // console.log(`n: ${this.nectarLevel} r: ${this.recoupTimer}`);
+        }
+        if (this.nectarLevel == 0 && this.recoupTimer < 3) {
+            this.recoupTimer += delta / (MIN_PER_DAY * 60);
         } else {
-            this.recoup_timer = 0;
-            this.nectar_level = Math.min(
-                this.nectar_base_level,
-                this.nectar_level + delta
+            this.recoupTimer = 0;
+            this.nectarLevel = Math.min(
+                this.nectarBaseLevel,
+                this.nectarLevel + delta / (MIN_PER_DAY * 60)
             );
         }
     }
 
     collectNectar(delta) {
-        const nectar = Math.min(this.nectar_level, 4 * delta);
-        this.nectar_level = Math.max(
+        const nectar = Math.min(this.nectarLevel, delta / BEE_COLLECTION_TIME);
+        this.nectarLevel = Math.max(
             0,
-            this.nectar_level -= nectar
+            this.nectarLevel - nectar
         );
+        if(this.name == 2) {
+            // console.log(`returning ${nectar} | n: ${this.nectarLevel}`);
+        }
         return nectar;
     }
 
@@ -95,10 +101,7 @@ export class Patch extends Location {
      * @param {number} time 
      */
     getWeight(hive, time) {
-        // if (this.name == 2) {
-        //     console.log(`Patch ${this.name}: ${this.#f(hive.position, this.position, this.nectar_base_level, this.nectar_level, this.bees_present, time, this.average_attractiveness)}`);
-        // }
-        return this.#f(hive.position, this.position, this.nectar_base_level, this.nectar_level, this.bees_present, time, this.average_attractiveness);
+        return this.#f(hive.position, this.position, this.nectarBaseLevel, this.nectarLevel, this.beesPresent, time, this.averageAttractiveness);
     }
 
 
@@ -113,6 +116,8 @@ export class Patch extends Location {
      * @returns {number} The weight of the patch. 
     */
     #f(p_h, p_t, size, n, b, t, a) {
+        // console.log(`Patch ${this.name}: ${10 * (60 * this.#q(p_h, p_t, t) + 30 * Math.exp(-2 * b / size) + 10 * a)}`);
+
         return (
             // (
             //     Math.log(
@@ -123,18 +128,30 @@ export class Patch extends Location {
             //     -1 * (1 - Patch.#z(t)) +
             //     Patch.#z(t) * 1 / (p_h.distanceTo(p_t) + 1)
             // ) *
-            100 *
-            Patch.#q(p_h, p_t, t) *
-            // Math.pow(n / size, 4) *
-            a * 1
+            10 *
+            (40 * this.#q(p_h, p_t, t) *
+                10 * Math.exp(-2 * b / size) +
+                10 * a)
             // (2 / (1 + Math.exp(b / size)))
         );
     }
 
-    static #q(p_h, p_t, t) {
-        const d = p_h.distanceTo(p_t);
-        console.log(10 * (d) / Math.pow(10 * Patch.#z(t) + 0.1 * d, 3));
-        return 10 * (d) / Math.pow(10 * Patch.#z(t) + 0.1 * d, 3);
+    /**
+     * @param {THREE.Vector3} p_h 
+     * @param {THREE.Vector3} p_t 
+     * @param {number} t
+     */
+    #q(p_h, p_t, t) {
+        const squeezeFactor = 3.5;
+        const squeezed_p_h = p_h.clone().multiplyScalar(squeezeFactor);
+        const squeezed_p_t = p_t.clone().multiplyScalar(squeezeFactor);
+        const m = squeezeFactor * Math.abs(this.upperBound - this.lowerBound) / 2; // maximum distance possible from hive along x/z-axis
+        const d_max = Math.sqrt(2 * Math.pow(m, 2)); // maximum distance (sqrt[m^2 + m^2])
+        const d = squeezed_p_h.distanceTo(squeezed_p_t) / d_max; // normalize distance
+        const distanceDaylightFactor = d / Math.pow(0.3 * Patch.#z(t), -1 * d);
+        const maxDDF = 10 / 3;
+        const normalizedDDF = distanceDaylightFactor / maxDDF;
+        return Math.max(0, normalizedDDF);
     }
 
     /**
@@ -145,24 +162,26 @@ export class Patch extends Location {
      */
     static #z(t) {
         const _t = Math.min(24.01, Math.max(t, 1.01));
-        const s = 0.16;
-        const m = 13.74;
+        const std = 0.31;
+        const mu = 12;
+        const scaleFactor = 7;
+        const z_max = scaleFactor * Math.exp(Math.pow(std, 2) / 2) / (mu * std * Math.sqrt(2 * Math.PI));
         const val = Math.min(
             1,
             (
-                10 * (
-                    1 / (1.08 * s * (_t - 1) * Math.sqrt(2 * Math.PI))
+                scaleFactor * (
+                    1 / (1.08 * std * (_t - 1) * Math.sqrt(2 * Math.PI))
                 ) *
                 Math.exp(
                     (
                         -1 * Math.pow(
-                            (Math.log(1.08 * (_t - 1)) - Math.log(m)), 2
+                            (Math.log(1.08 * (_t - 1)) - Math.log(mu)), 2
                         )
                     ) /
-                    (2 * Math.pow(s, 2))
+                    (2 * Math.pow(std, 2))
                 )
             )
         );
-        return isNaN(val) || val <= 0 ? 0 : (val);
+        return (isNaN(val) || val <= 0) ? 0 : (val / z_max);
     }
 }

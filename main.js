@@ -2,14 +2,17 @@ import * as THREE from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { Line2, LineGeometry } from 'three/examples/jsm/Addons.js';
 
+import { weightedVoronoi } from 'd3-weighted-voronoi';
+
 import { Hive, Patch } from './location.js';
 import { Bee } from './bee.js';
-import { weightedVoronoi } from 'd3-weighted-voronoi';
+import { NUM_BEES, NUM_PATCHES, MIN_PER_DAY } from './parameters.js';
+
 
 const scene = new THREE.Scene();
 
 // orthographic camera setup
-const aspect = window.innerWidth / window.innerHeight;
+const aspect = 1;
 const frustumSize = 200;
 const left = -frustumSize * aspect / 2;
 const right = frustumSize * aspect / 2;
@@ -32,26 +35,35 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, sunIntensity); // 
 directionalLight.position.set(0, 30, 0);
 scene.add(directionalLight);
 
+// add canvas to document
+const container = document.getElementById('canvas-container');
+
 // renderer
+function getWindowSize() {
+    const size = Math.min(container.clientWidth, container.clientHeight); 
+    return Math.floor(size);
+}
+console.log(window.innerWidth, window.innerHeight, container.clientWidth, container.clientHeight);
+
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
+const windowSize = getWindowSize();
+renderer.setSize(windowSize, windowSize);
 renderer.setPixelRatio(window.devicePixelRatio);
 // renderer.shadowMap.enabled = true;
 // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // document.body.appendChild(renderer.domElement);
 window.addEventListener('resize', () => {
-    const aspect = window.innerWidth / window.innerHeight;
+    const updatedSize = getWindowSize();
     camera.left = -frustumSize * aspect / 2;
     camera.right = frustumSize * aspect / 2;
     camera.top = frustumSize / 2;
     camera.bottom = -frustumSize / 2;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(updatedSize, updatedSize);
 });
 
 
-// overlay text and add canvas to document
-const container = document.getElementById('canvas-container');
+// overlay text
 const clockTime = document.getElementById('current-time');
 const clockDay = document.getElementById('current-day');
 container.prepend(renderer.domElement);
@@ -63,9 +75,6 @@ const ground = new THREE.Mesh(geometry, material);
 ground.receiveShadow = true;
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
-
-const NUM_BEES = 20;
-const NUM_PATCHES = 30;
 
 const hive = new Hive(scene, renderer, frustumSize);
 
@@ -86,7 +95,6 @@ let lastTime = 0;
 let currTime = 0.5;
 let currDay = 0;
 let frame = 0;
-const MIN_PER_DAY = .2;
 
 const trackedOutlines = [];
 /**
@@ -152,7 +160,7 @@ function animate(time) {
         return;
     }
 
-    const deltaSeconds = delta / 1000; 
+    const deltaSeconds = delta / 1000;
 
     bees.forEach((bee) => { bee.update(deltaSeconds) });
     patches.forEach((patch) => { patch.update(deltaSeconds) });
